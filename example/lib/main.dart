@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
               onPressed: () async {
                 try{
                   SgxClient.init();
-                  final result = await SgxClient.get("");
+                  final result = await SgxClient.get("https://keyt.safematrix.io:8448");
                   setState(() {
                     _result = result;
                   });

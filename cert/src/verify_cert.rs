@@ -230,3 +230,11 @@ fn to_cstr(value: &str) -> *const c_char {
     let c_str_song = CString::new(value).unwrap();
     c_str_song.into_raw()
 }
+
+#[no_mangle]
+pub extern fn rust_cstr_free(s: *mut c_char) {
+    unsafe {
+        if s.is_null() { return }
+        CString::from_raw(s)
+    };
+}

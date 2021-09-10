@@ -21,7 +21,6 @@ class SgxClient {
             (X509Certificate cert, String name, int port) {
           try {
             final result = VerifyBridge.verify(cert);
-            log(result.toString());
             return result;
           } catch (e) {
             log(e.toString());
