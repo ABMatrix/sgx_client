@@ -6,7 +6,7 @@ Connect to sgx server with remote attestation.
 
 ```
 dependencies:
-  package1:
+  sgx_client:
     git:
       url: https://github.com/ABMatrix/sgx_client.git
 ```
