@@ -1,8 +1,8 @@
-# sgx_client
+# Sgx client
 
 Connect to sgx server with remote attestation.
 
-# Install
+## Install
 
 ```
 dependencies:
