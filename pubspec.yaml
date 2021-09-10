@@ -11,7 +11,8 @@ dependencies:
   dio: ^4.0.0
   flutter:
     sdk: flutter
-  pem: ^2.0.0
+  ffi: 
+  hex: ^0.2.0
 
 dev_dependencies:
   flutter_test:

@@ -44,9 +44,9 @@ init:
 all: ios android bindings
 
 ## ios: Compile the iOS universal library
-ios: target/universal/release/libexample.a
+ios: target/universal/release/libverify.a
 
-target/universal/release/libexample.a: $(SOURCES) ndk-home
+target/universal/release/libverify.a: $(SOURCES) ndk-home
 	@if [ $$(uname) == "Darwin" ] ; then \
 		cargo lipo --release ; \
 		else echo "Skipping iOS compilation on $$(uname)" ; \
@@ -54,27 +54,27 @@ target/universal/release/libexample.a: $(SOURCES) ndk-home
 	@echo "[DONE] $@"
 
 ## android: Compile the android targets (arm64, armv7 and i686)
-android: target/aarch64-linux-android/release/libexample.so target/armv7-linux-androideabi/release/libexample.so target/i686-linux-android/release/libexample.so target/x86_64-linux-android/release/libexample.so
+android: target/aarch64-linux-android/release/libverify.so target/armv7-linux-androideabi/release/libverify.so target/i686-linux-android/release/libverify.so target/x86_64-linux-android/release/libverify.so
 
-target/aarch64-linux-android/release/libexample.so: $(SOURCES) ndk-home
+target/aarch64-linux-android/release/libverify.so: $(SOURCES) ndk-home
 	CC_aarch64_linux_android=$(ANDROID_AARCH64_LINKER) \
 	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$(ANDROID_AARCH64_LINKER) \
 		cargo build --target aarch64-linux-android --release
 	@echo "[DONE] $@"
 
-target/armv7-linux-androideabi/release/libexample.so: $(SOURCES) ndk-home
+target/armv7-linux-androideabi/release/libverify.so: $(SOURCES) ndk-home
 	CC_armv7_linux_androideabi=$(ANDROID_ARMV7_LINKER) \
 	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$(ANDROID_ARMV7_LINKER) \
 		cargo build --target armv7-linux-androideabi --release
 	@echo "[DONE] $@"
 
-target/i686-linux-android/release/libexample.so: $(SOURCES) ndk-home
+target/i686-linux-android/release/libverify.so: $(SOURCES) ndk-home
 	CC_i686_linux_android=$(ANDROID_I686_LINKER) \
 	CARGO_TARGET_I686_LINUX_ANDROID_LINKER=$(ANDROID_I686_LINKER) \
 		cargo  build --target i686-linux-android --release
 	@echo "[DONE] $@"
 
-target/x86_64-linux-android/release/libexample.so: $(SOURCES) ndk-home
+target/x86_64-linux-android/release/libverify.so: $(SOURCES) ndk-home
 	CC_x86_64_linux_android=$(ANDROID_X86_64_LINKER) \
 	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$(ANDROID_X86_64_LINKER) \
 		cargo build --target x86_64-linux-android --release
@@ -92,7 +92,7 @@ bindings: target/bindings.h
 
 target/bindings.h: $(SOURCES)
 	cbindgen $^ -c cbindgen.toml | grep -v \#include | uniq > $@
-	@echo "[DONE] $@"
+	@echo "[DONE] $@
 
 ## :
 
@@ -102,7 +102,7 @@ target/bindings.h: $(SOURCES)
 
 ## clean:
 .PHONY: clean
-clean:
+bclean:
 	cargo clean
 	rm -f target/bindings.h target/bindings.src.h
 

@@ -1,11 +1,8 @@
-extern crate libc;
-
-use libc::{c_char, size_t};
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::io::BufReader;
+use std::os::raw::c_char;
 use std::prelude::v1::*;
 use std::ptr;
-use std::slice;
 use std::time::*;
 
 use base64;
@@ -44,12 +41,12 @@ static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
 pub const IAS_REPORT_CA: &[u8] = include_bytes!("AttestationReportSigningCACert.pem");
 
 #[no_mangle]
-pub extern "C" fn verify_mra_cert(n: *const u8, len: size_t) -> *mut c_char {
+pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
     let cert_der = unsafe {
-        assert!(!n.is_null());
-
-        slice::from_raw_parts(n, len as usize)
+        CStr::from_ptr(pem).to_str().unwrap()
     };
+
+    let cert_der = hex::decode(cert_der).unwrap();
     // Before we reach here, Webpki already verifed the cert is properly signed
 
     // Search for Public Key prime256v1 OID
@@ -226,10 +223,10 @@ pub extern "C" fn verify_mra_cert(n: *const u8, len: size_t) -> *mut c_char {
         return to_cstr(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str());
     }
 
-    to_cstr("success")
+    to_cstr("Success")
 }
 
-fn to_cstr(value: &str) -> *mut c_char {
+fn to_cstr(value: &str) -> *const c_char {
     let c_str_song = CString::new(value).unwrap();
     c_str_song.into_raw()
 }

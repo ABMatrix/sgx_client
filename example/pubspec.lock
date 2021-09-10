@@ -64,6 +64,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.2.0"
+  ffi:
+    dependency: transitive
+    description:
+      name: ffi
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.1.2"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -74,6 +81,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  hex:
+    dependency: transitive
+    description:
+      name: hex
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.2.0"
   http_parser:
     dependency: transitive
     description:
@@ -102,20 +116,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.8.0"
-  pem:
-    dependency: transitive
-    description:
-      name: pem
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "2.0.0"
-  petitparser:
-    dependency: transitive
-    description:
-      name: petitparser
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "4.1.0"
   sgx_client:
     dependency: "direct main"
     description:
