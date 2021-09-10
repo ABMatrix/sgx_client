@@ -6,8 +6,8 @@ class SgxClientError extends Error {
   @override
   String toString() {
     if (message != null) {
-      return "Sgx verify failed: ${Error.safeToString(message)}";
+      return "Sgx connect failed: ${Error.safeToString(message)}";
     }
-    return "Sgx server failed";
+    return "Sgx connect failed";
   }
 }

@@ -11,4 +11,8 @@ public class SwiftSgxClientPlugin: NSObject, FlutterPlugin {
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     result("iOS " + UIDevice.current.systemVersion)
   }
+
+  public func methodToEnforceBundling() {
+    verify_mra_cert("");
+  }
 }
