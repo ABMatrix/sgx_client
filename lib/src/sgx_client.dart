@@ -41,4 +41,27 @@ class SgxClient {
     }
     if (response.data != null) return response.data;
   }
+
+  static Future postJson(String url, [Map<String, dynamic>? data]) async {
+    var response = await dio.post(url, data: data);
+    return response.data;
+  }
+
+  static Future post(String url, [Map<String, dynamic>? params]) async {
+    var response = await dio.post(url, queryParameters: params);
+    return response.data;
+  }
+
+  static Future put(String url,
+      [Map<String, dynamic>? data]) async {
+    var response = await dio.put(url, queryParameters: data);
+    return response.data;
+  }
+
+  ///put body请求
+  static Future putJson(String url,
+      [Map<String, dynamic>? data]) async {
+    var response = await dio.put(url, data: data);
+    return response.data;
+  }
 }
