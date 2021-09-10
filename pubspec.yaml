@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   ffi: 
   hex: ^0.2.0
+  pem: ^2.0.0
 
 dev_dependencies:
   flutter_test:
