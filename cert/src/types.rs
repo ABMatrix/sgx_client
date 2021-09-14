@@ -1,5 +1,22 @@
 use crate::*;
 use core::default::Default;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct VerifyResult {
+    pub result: String,
+    pub report_body: ReportBody
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ReportBody {
+    pub version: uint16_t,
+    pub sign_type: uint16_t,
+    pub report_data: Vec<uint8_t>,
+    pub mr_enclave: Vec<uint8_t>,
+    pub mr_signer: Vec<uint8_t>,
+    pub pub_key: Vec<u8>
+}
 
 impl_packed_struct! {
     pub struct sgx_basename_t {

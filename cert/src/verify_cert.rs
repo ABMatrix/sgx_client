@@ -15,7 +15,7 @@ use webpki;
 
 use crate::error::sgx_status_t;
 use crate::pib::*;
-use crate::types::sgx_quote_t;
+use crate::types::{sgx_quote_t, ReportBody, VerifyResult};
 
 pub type uint8_t = u8;
 pub type uint16_t = u16;
@@ -42,19 +42,45 @@ pub const IAS_REPORT_CA: &[u8] = include_bytes!("AttestationReportSigningCACert.
 
 #[no_mangle]
 pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
-    let cert_der = unsafe {
-        CStr::from_ptr(pem).to_str().unwrap()
+    let res = match verify_cert(pem) {
+        Ok(report_body) => VerifyResult {
+            result: "Success".to_string(),
+            report_body
+        },
+        Err(e) => VerifyResult {
+            result: e,
+            report_body: ReportBody::default()
+        }
     };
+    let c_str_song = match serde_json::to_string(&res) {
+        Ok(res_string) => CString::new(res_string.as_str()).unwrap(),
+        Err(_) => CString::new("Serialize failed").unwrap()
+    };
+    c_str_song.into_raw()
+}
 
-    let cert_der = hex::decode(cert_der).unwrap();
+fn verify_cert(pem: *const c_char) -> Result<ReportBody, String> {
+    let cert_der = unsafe {
+        CStr::from_ptr(pem).to_str()
+    };
+    let cert_der = match cert_der {
+        Ok(cert_der_str) => match hex::decode(cert_der_str) {
+            Ok(cert_der_vec) => cert_der_vec,
+            Err(_) => return Err("hex::decode(cert_der_str) error".to_string())
+        },
+        Err(_) =>   return Err("CStr::from_ptr(pem).to_str() error".to_string())
+    };
     // Before we reach here, Webpki already verifed the cert is properly signed
 
     // Search for Public Key prime256v1 OID
     let prime256v1_oid = &[0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07];
-    let mut offset = cert_der
+    let mut offset = match cert_der
         .windows(prime256v1_oid.len())
         .position(|window| window == prime256v1_oid)
-        .unwrap();
+    {
+        Some(offset) => offset,
+        None => return Err("not contains prime256v1_oid".to_string())
+    };
     offset += 11; // 10 + TAG (0x03)
 
     // Obtain Public Key length
@@ -72,10 +98,13 @@ pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
     let ns_cmt_oid = &[
         0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x86, 0xF8, 0x42, 0x01, 0x0D,
     ];
-    let mut offset = cert_der
+    let mut offset = match cert_der
         .windows(ns_cmt_oid.len())
         .position(|window| window == ns_cmt_oid)
-        .unwrap();
+    {
+        Some(offset) => offset,
+        None => return Err("not contains ns_cmt_oid".to_string())
+    };
     offset += 12; // 11 + TAG (0x04)
 
     // Obtain Netscape Comment length
@@ -91,13 +120,31 @@ pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
 
     // Extract each field
     let mut iter = payload.split(|x| *x == 0x7C);
-    let attn_report_raw = iter.next().unwrap();
-    let sig_raw = iter.next().unwrap();
-    let sig = base64::decode(&sig_raw).unwrap();
+    let attn_report_raw = match iter.next() {
+        Some(attn_report_raw) => attn_report_raw,
+        None => return Err("iter attn_report_raw error".to_string())
+    };
+    let sig_raw = match iter.next() {
+        Some(sig_raw) => sig_raw,
+        None => return Err("iter sig_raw error".to_string())
+    };
+    let sig = match base64::decode(&sig_raw) {
+        Ok(sig) => sig,
+        Err(_) => return Err("base64::decode error".to_string())
+    };
 
-    let sig_cert_raw = iter.next().unwrap();
-    let sig_cert_dec = base64::decode_config(&sig_cert_raw, base64::MIME).unwrap();
-    let sig_cert = webpki::EndEntityCert::from(&sig_cert_dec).expect("Bad DER");
+    let sig_cert_raw = match iter.next() {
+        Some(sig_cert_raw) => sig_cert_raw,
+        None => return Err("iter sig_cert_raw error".to_string())
+    };
+    let sig_cert_dec = match base64::decode_config(&sig_cert_raw, base64::MIME) {
+        Ok(sig_cert_dec) => sig_cert_dec,
+        Err(_) => return Err("base64::decode_config error".to_string())
+    };
+    let sig_cert = match webpki::EndEntityCert::from(&sig_cert_dec) {
+        Ok(sig_cert) => sig_cert,
+        Err(_) => return Err("Bad DER".to_string())
+    };
 
     // Load Intel CA
 
@@ -107,14 +154,17 @@ pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
     let tail_len = "-----END CERTIFICATE-----".len();
     let full_len = ias_ca_stripped.len();
     let ias_ca_core: &[u8] = &ias_ca_stripped[head_len..full_len - tail_len];
-    let ias_cert_dec = base64::decode_config(ias_ca_core, base64::MIME).unwrap();
+    let ias_cert_dec = match base64::decode_config(ias_ca_core, base64::MIME) {
+        Ok(ias_cert_dec) => ias_cert_dec,
+        Err(_) => return Err("base64::decode_config error".to_string())
+    };
 
     let mut ca_reader = BufReader::new(&IAS_REPORT_CA[..]);
 
     let mut root_store = rustls::RootCertStore::empty();
-    root_store
-        .add_pem_file(&mut ca_reader)
-        .expect("Failed to add CA");
+    if let Err(_) = root_store.add_pem_file(&mut ca_reader) {
+        return Err("Failed to add CA".to_string());
+    }
 
     let trust_anchors: Vec<webpki::TrustAnchor> = root_store
         .roots
@@ -125,43 +175,50 @@ pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
     let mut chain: Vec<&[u8]> = Vec::new();
     chain.push(&ias_cert_dec);
 
-    let now_func = webpki::Time::try_from(SystemTime::now());
+    let now_func = match webpki::Time::try_from(SystemTime::now()) {
+        Ok(now_func) => now_func,
+        Err(_) => return Err("now_func error".to_string())
+    };
 
     match sig_cert.verify_is_valid_tls_server_cert(
         SUPPORTED_SIG_ALGS,
         &webpki::TLSServerTrustAnchors(&trust_anchors),
         &chain,
-        now_func.unwrap(),
+        now_func,
     ) {
         Ok(_) => println!("Cert is good"),
-        Err(e) => println!("Cert verification error {:?}", e),
+        Err(e) => return Err(format!("Cert verification error {:?}", e)),
     }
 
     // Verify the signature against the signing cert
     match sig_cert.verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &attn_report_raw, &sig) {
         Ok(_) => println!("Signature good"),
-        Err(e) => {
-            println!("Signature verification error {:?}", e);
-            panic!();
-        }
+        Err(e) => return Err(format!("Signature verification error {:?}", e))
     }
 
     // Verify attestation report
     // 1. Check timestamp is within 24H
-    let attn_report: Value = serde_json::from_slice(attn_report_raw).unwrap();
+    let attn_report: Value = match serde_json::from_slice(attn_report_raw) {
+        Ok(attn_report) => attn_report,
+        Err(_) => return Err("serde_json::from_slice(attn_report_raw) error".to_string())
+    };
     if let Value::String(time) = &attn_report["timestamp"] {
         let time_fixed = time.clone() + "+0000";
-        let ts = DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z")
-            .unwrap()
+        let ts = match DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z") {
+            Ok(dt) => dt,
+            Err(_) => return Err("DateTime::parse_from_str(&time_fixed) error".to_string())
+        }
             .timestamp();
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
+        let now = match SystemTime::now()
+            .duration_since(UNIX_EPOCH) {
+            Ok(dr) => dr,
+            Err(_) => return Err("SystemTime::now().duration_since(UNIX_EPOCH) error".to_string())
+        }
             .as_secs() as i64;
         println!("Time diff = {}", now - ts);
     } else {
         println!("Failed to fetch timestamp from attestation report");
-        return to_cstr(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str());
+        return Err(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str().to_string());
     }
 
     // 2. Verify quote status (mandatory field)
@@ -176,22 +233,34 @@ pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
                     println!("{:?}", got_pib);
                 } else {
                     println!("Failed to fetch platformInfoBlob from attestation report");
-                    return to_cstr(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str());
+                    return Err(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str().to_string());
                 }
             }
-            _ => return to_cstr(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str()),
+            _ => return Err(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str().to_string()),
         }
     } else {
         println!("Failed to fetch isvEnclaveQuoteStatus from attestation report");
-        return to_cstr(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str());
+        return Err(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str().to_string());
     }
 
     // 3. Verify quote body
     if let Value::String(quote_raw) = &attn_report["isvEnclaveQuoteBody"] {
-        let quote = base64::decode(&quote_raw).unwrap();
+        let quote = match base64::decode(&quote_raw) {
+            Ok(quote) => quote,
+            Err(_) => return Err("base64::decode(&quote_raw) error".to_string())
+        };
         println!("Quote = {:?}", quote);
         // TODO: lack security check here
         let sgx_quote: sgx_quote_t = unsafe { ptr::read(quote.as_ptr() as *const _) };
+        let report_body = ReportBody {
+            version: sgx_quote.version,
+            sign_type: sgx_quote.sign_type,
+            report_data: sgx_quote.report_body.report_data.d.to_vec(),
+            mr_enclave: sgx_quote.report_body.mr_enclave.m.to_vec(),
+            mr_signer: sgx_quote.report_body.mr_signer.m.to_vec(),
+            pub_key: pub_k.clone()
+        };
+
 
         // Borrow of packed field is unsafe in future Rust releases
         // ATTENTION
@@ -217,18 +286,15 @@ pub extern "C" fn verify_mra_cert(pem: *const c_char) -> *const c_char {
         println!("Anticipated public key = {:02x}", pub_k.iter().format(""));
         if sgx_quote.report_body.report_data.d.to_vec() == pub_k.to_vec() {
             println!("ue RA done!");
+        } else {
+            return Err("pubkey invalid".to_string());
         }
+
+        Ok(report_body)
     } else {
         println!("Failed to fetch isvEnclaveQuoteBody from attestation report");
-        return to_cstr(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str());
+        Err(sgx_status_t::SGX_ERROR_UNEXPECTED.as_str().to_string())
     }
-
-    to_cstr("Success")
-}
-
-fn to_cstr(value: &str) -> *const c_char {
-    let c_str_song = CString::new(value).unwrap();
-    c_str_song.into_raw()
 }
 
 #[no_mangle]
