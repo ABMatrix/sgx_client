@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
@@ -19,21 +20,17 @@ class VerifyBridge {
     if (_lib == null) {
       _loadLib();
     }
-    final der = HEX.encode(cert.der);
-    if(der.length != 6332) {
-      throw SgxClientError('Bad certificate');
-    }
-    final result = VerifyBindings(_lib!)
+    final res = VerifyBindings(_lib!)
         .verify_mra_cert(HEX.encode(cert.der).toNativeUtf8().cast<Int8>())
         .cast<Utf8>()
         .toDartString();
 
-    log(result);
-    _free(result);
-    if (result == 'Success') {
+    _free(res);
+    final result = jsonDecode(res);
+    if (result['result'] == 'Success') {
       return true;
     } else {
-      throw SgxClientError(result);
+      throw SgxClientError(result['result']);
     }
   }
 
