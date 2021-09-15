@@ -10,6 +10,7 @@ class SgxClient {
   static final Dio dio = Dio(BaseOptions(
     receiveTimeout: 30000,
     connectTimeout: 30000,
+    headers: {'Connection': 'close'}
   ));
 
   static init() async {
