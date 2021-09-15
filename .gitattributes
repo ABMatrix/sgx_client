@@ -1,0 +1,2 @@
+libverify_mra_cert.a filter=lfs diff=lfs merge=lfs -text
+libverify_mra_cert.so filter=lfs diff=lfs merge=lfs -text
