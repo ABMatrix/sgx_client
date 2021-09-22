@@ -13,7 +13,7 @@ public class SwiftSgxClientPlugin: NSObject, FlutterPlugin {
   }
 
   public func methodToEnforceBundling() {
-    verify_mra_cert("");
-    rust_cstr_free("");
+    verify_mra_cert(nil);
+    rust_cstr_free(nil);
   }
 }
