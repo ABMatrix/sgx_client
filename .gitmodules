@@ -1,0 +1,3 @@
+[submodule "cert/tra"]
+	path = cert/tra
+	url = https://github.com/safematrix/tra.git
