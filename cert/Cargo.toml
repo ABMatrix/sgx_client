@@ -1,14 +1,19 @@
 [package]
-name = "cert"
-version = "0.1.0"
 edition = "2018"
+name = "verify-mra-cert"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
+crate-type = ["rlib", "rlib"]
 name = "verify_mra_cert"
-crate-type = ["cdylib", "staticlib"]
+
+[build-dependencies]
+cbindgen = "0.20.0"
+dart-bindgen = "0.1.7"
 
 [dependencies]
-tra = { path = "./tra" }
-serde       = { version = "1.0.130", features = ["derive"] }
-serde_json  = "1.0"
+hex = "0.4"
+serde = {version = "1.0.130", features = ["derive"]}
+serde_json = "1.0"
+tra = {path = "./tra", features=["std"], default-features=false}

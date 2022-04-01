@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:sgx_client/sgx_client.dart';
 
+const nonSgxUrl = "https://baidu.com";
+const sgxUrl = "https://key3.safematrix.io:9010";
 void main() {
   runApp(MyApp());
 }
@@ -27,28 +29,42 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            IconButton(
-              onPressed: () async {
-                try{
-                  SgxClient.init();
-                  final result = await SgxClient.get("https://baidu.com");
-                  setState(() {
-                    _result = result;
-                  });
-                } catch(e) {
-                  print(e.toString());
-                }
-              },
-              icon: Icon(Icons.signal_cellular_connected_no_internet_4_bar),
-            ),
-            Text('Response: $_result\n'),
-          ],
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () => _verifyCert(nonSgxUrl),
+                icon: Icon(Icons.send),
+              ),
+              Text('Non sgx server url $nonSgxUrl'),
+              IconButton(
+                onPressed: () => _verifyCert(sgxUrl),
+                icon: Icon(Icons.send),
+              ),
+              Text('Sgx url $sgxUrl'),
+              SizedBox(
+                height: 30,
+              ),
+              Text('Response: $_result\n'),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  _verifyCert(String url) async {
+    try {
+      SgxClient.init();
+      final result = await SgxClient.get(url);
+      setState(() {
+        _result = result;
+      });
+    } catch (e) {
+      setState(() {
+        _result = e.toString();
+      });
+    }
   }
 }

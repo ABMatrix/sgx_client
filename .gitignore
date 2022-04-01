@@ -7,3 +7,12 @@ pubspec.lock
 
 build/
 cert/target/
+
+# android
+android/src/main/jniLibs
+
+# ios
+ios/*.a
+ios/Classes/binding.h
+
+cert/*.h

@@ -1,12 +1,13 @@
+use hex;
+use serde::{Deserialize, Serialize};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::prelude::v1::*;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct VerifyResult {
     pub result: String,
-    pub report_body: ReportBody
+    pub report_body: ReportBody,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -16,7 +17,7 @@ pub struct ReportBody {
     pub report_data: Vec<u8>,
     pub mr_enclave: Vec<u8>,
     pub mr_signer: Vec<u8>,
-    pub pub_key: Vec<u8>
+    pub pub_key: Vec<u8>,
 }
 
 impl From<tra::EnclaveFields> for ReportBody {
@@ -33,28 +34,31 @@ impl From<tra::EnclaveFields> for ReportBody {
 }
 #[no_mangle]
 pub extern "C" fn verify_mra_cert(pem: *const c_char, now: u64) -> *const c_char {
-    let s: &CStr = unsafe { CStr::from_ptr(pem) };
-    let res = match tra::verify_cert(s.to_bytes(), now) {
+    let s = unsafe { CStr::from_ptr(pem).to_str() };
+    let pem_string: &[u8] = &(hex::decode(s.unwrap()).unwrap());
+    let res = match tra::verify_cert(pem_string, now) {
         Ok(report_body) => VerifyResult {
             result: "Success".to_string(),
-            report_body: report_body.into()
+            report_body: report_body.into(),
         },
         Err(e) => VerifyResult {
             result: format!("{:?}", e),
-            report_body: ReportBody::default()
-        }
+            report_body: ReportBody::default(),
+        },
     };
     let c_str_song = match serde_json::to_string(&res) {
         Ok(res_string) => CString::new(res_string.as_str()).unwrap(),
-        Err(_) => CString::new("Serialize failed").unwrap()
+        Err(_) => CString::new("Serialize failed").unwrap(),
     };
     c_str_song.into_raw()
 }
 
 #[no_mangle]
-pub extern fn rust_cstr_free(s: *mut c_char) {
+pub extern "C" fn rust_cstr_free(s: *mut c_char) {
     unsafe {
-        if s.is_null() { return }
+        if s.is_null() {
+            return;
+        }
         CString::from_raw(s)
     };
 }
