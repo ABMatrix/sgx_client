@@ -8,17 +8,17 @@ environment:
   flutter: ">=1.20.0"
 
 dependencies:
-  dio: ^4.0.0
+  dio: ^5.3.2
   flutter:
     sdk: flutter
-  ffi: ^1.1.2
+  ffi: ^2.0.1
   hex: ^0.2.0
   pem: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  ffigen: ^4.0.0
+  ffigen: ^10.0.0
 
 flutter:
   plugin:
