@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
 
@@ -21,7 +20,7 @@ class VerifyBridge {
       _loadLib();
     }
     final res = VerifyBindings(_lib!)
-        .verify_mra_cert(HEX.encode(cert.der).toNativeUtf8().cast<Int8>())
+        .verifyMraCert(HEX.encode(cert.der).toNativeUtf8().cast<Int8>())
         .cast<Utf8>()
         .toDartString();
 
@@ -42,6 +41,6 @@ class VerifyBridge {
 
   static void _free(String value) {
     final ptr = value.toNativeUtf8().cast<Int8>();
-    return VerifyBindings(_lib!).rust_cstr_free(ptr);
+    return VerifyBindings(_lib!).rustCstrFree(ptr);
   }
 }

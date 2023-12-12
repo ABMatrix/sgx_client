@@ -19,32 +19,28 @@ class VerifyBindings {
           lookup)
       : _lookup = lookup;
 
-  ffi.Pointer<ffi.Int8> verify_mra_cert(
+  ffi.Pointer<ffi.Int8> verifyMraCert(
     ffi.Pointer<ffi.Int8> pem,
   ) {
-    return _verify_mra_cert(
+    return _verifyMraCert(
       pem,
     );
   }
 
-  late final _verify_mra_certPtr = _lookup<
+  late final _verifyMraCertPtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Int8> Function(
               ffi.Pointer<ffi.Int8>)>>('verify_mra_cert');
-  late final _verify_mra_cert = _verify_mra_certPtr
+  late final _verifyMraCert = _verifyMraCertPtr
       .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
 
-  void rust_cstr_free(
-    ffi.Pointer<ffi.Int8> s,
-  ) {
-    return _rust_cstr_free(
-      s,
-    );
+  void rustCstrFree(ffi.Pointer<ffi.Int8> s) {
+    return _rustCstrFree(s);
   }
 
-  late final _rust_cstr_freePtr =
+  late final _rustCstrFreePtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Int8>)>>(
           'rust_cstr_free');
-  late final _rust_cstr_free =
-      _rust_cstr_freePtr.asFunction<void Function(ffi.Pointer<ffi.Int8>)>();
+  late final _rustCstrFree =
+      _rustCstrFreePtr.asFunction<void Function(ffi.Pointer<ffi.Int8>)>();
 }
