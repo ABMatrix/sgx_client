@@ -1,21 +1,19 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:dio/adapter.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 import 'verify_bridge.dart';
 
 class SgxClient {
   static final Dio dio = Dio(BaseOptions(
-    receiveTimeout: 30000,
-    connectTimeout: 30000,
-    headers: {'Connection': 'close'}
-  ));
+      receiveTimeout: Duration(milliseconds: 30000),
+      connectTimeout: Duration(milliseconds: 30000),
+      headers: {'Connection': 'close'}));
 
   static init() async {
-    (dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
-        (client) {
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       SecurityContext sc = SecurityContext(withTrustedRoots: false);
       HttpClient httpClient = HttpClient(context: sc)
         ..badCertificateCallback =
@@ -52,15 +50,13 @@ class SgxClient {
     return response.data;
   }
 
-  static Future put(String url,
-      [Map<String, dynamic>? data]) async {
+  static Future put(String url, [Map<String, dynamic>? data]) async {
     var response = await dio.put(url, queryParameters: data);
     return response.data;
   }
 
   ///put body请求
-  static Future putJson(String url,
-      [Map<String, dynamic>? data]) async {
+  static Future putJson(String url, [Map<String, dynamic>? data]) async {
     var response = await dio.put(url, data: data);
     return response.data;
   }

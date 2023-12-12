@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
-import 'package:pem/pem.dart';
 
 import './sgx_client_error.dart';
 import './utils.dart';
@@ -13,12 +12,12 @@ class SgxVerify {
   static bool sgxVerify(X509Certificate cert, String host, int port) {
     print(cert.pem);
     print(cert.der);
-    final keydata = PemCodec(PemLabel.certificate).decode(cert.pem);
+    // final keydata = PemCodec(PemLabel.certificate).decode(cert.pem);
 
-    final result = parseCert(keydata as Uint8List);
+    // final result = parseCert(keydata as Uint8List);
 
-    final pubKey = result[0];
-    final payload = result[1];
+    // final pubKey = result[0];
+    // final payload = result[1];
 
     return true;
   }
@@ -27,24 +26,24 @@ class SgxVerify {
     // Extract each field
     final plSplit = payload.split(0x7C);
     final attnReportRaw = plSplit[0];
-    final sigRaw = plSplit[1];
+    // final sigRaw = plSplit[1];
 
-    late Uint8List sig, sigCertDec;
-    final sigRawString = utf8.decode(sigRaw);
-    sig = base64Decode(sigRawString);
+    // late Uint8List sig, sigCertDec;
+    // final sigRawString = utf8.decode(sigRaw);
+    // sig = base64Decode(sigRawString);
 
-    final sigCertRaw = plSplit[2];
-    sigCertDec = base64Decode(sigCertRaw);
+    // final sigCertRaw = plSplit[2];
+    // sigCertDec = base64Decode(sigCertRaw);
 
-    final dir =
-        "/home/stone/Rust/incubator-teaclave-sgx-sdk/samplecode/ue-ra/cert";
-    final cacert =
-        File(dir + '/AttestationReportSigningCACert.pem').readAsStringSync();
+    // final dir =
+    //     "/home/stone/Rust/incubator-teaclave-sgx-sdk/samplecode/ue-ra/cert";
+    // final cacert =
+    //     File(dir + '/AttestationReportSigningCACert.pem').readAsStringSync();
 
     // final certServer = x509.parsePem(sigCertDec).first;
-    final keydata = PemCodec(PemLabel.certificate).decode(cacert);
-    final result = parseCert(keydata as Uint8List);
-    final pubKey = result[0];
+    // final keydata = PemCodec(PemLabel.certificate).decode(cacert);
+    // final result = parseCert(keydata as Uint8List);
+    // final pubKey = result[0];
 
     return attnReportRaw;
   }
@@ -53,10 +52,10 @@ class SgxVerify {
     final attesString = utf8.decode(attestRep);
     final qr = QuoteReport.fromJson(attesString);
     if (qr.timestamp != "") {
-//timeFixed := qr.Timestamp + "+0000"
-      final timeFixed = qr.timestamp + "Z";
+      // timeFixed := qr.Timestamp + "+0000"
+      // final timeFixed = qr.timestamp + "Z";
       // final ts = DateTime.Parse(time.RFC3339, timeFixed);
-      final now = DateTime.now().millisecondsSinceEpoch;
+      // final now = DateTime.now().millisecondsSinceEpoch;
       print("Time diff = ");
     } else {
       throw SgxClientError("Failed to fetch timestamp from attestation report");
